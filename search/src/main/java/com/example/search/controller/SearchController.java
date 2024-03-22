@@ -1,6 +1,8 @@
 package com.example.search.controller;
 
 import com.example.common.domain.Employee;
+import com.example.common.domain.GeneralResponse;
+import com.example.common.domain.SearchResponseData;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,13 +24,16 @@ public class SearchController {
 
     @GetMapping("/weather/search")
     @HystrixCommand(fallbackMethod = "defaultResponse")
-    public ResponseEntity<String> getDetails() {
-        CompletableFuture<?>[] futures = new CompletableFuture[] {
-            CompletableFuture.supplyAsync(() -> restTemplate.getForObject("http://employee/employee/adults", String.class)),
-                CompletableFuture.supplyAsync(() -> restTemplate.getForEntity("http://details/details/port", String.class))
+    public ResponseEntity<SearchResponseData> getDetails() {
+        CompletableFuture<Object>[] futures = new CompletableFuture[] {
+            CompletableFuture.supplyAsync(() -> restTemplate.getForObject("http://employee/employee/adults", Employee[].class)),
+                CompletableFuture.supplyAsync(() -> restTemplate.getForObject("http://details/details/port", GeneralResponse.class))
         };
         CompletableFuture.allOf(futures).join();
-        return new ResponseEntity<>(futures[0].join() + "\n\n" + futures[1].join(), HttpStatus.OK);
+        SearchResponseData searchResponseData = new SearchResponseData();
+        searchResponseData.setEmployeeResponse((Employee[]) futures[0].join());
+        searchResponseData.setPortResponse((String) ((GeneralResponse) futures[1].join()).getData());
+        return new ResponseEntity<>(searchResponseData, HttpStatus.OK);
     }
 
     public ResponseEntity<String> defaultResponse() {

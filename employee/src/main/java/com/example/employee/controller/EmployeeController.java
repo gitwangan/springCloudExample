@@ -26,6 +26,7 @@ public class EmployeeController {
     }
 
     @GetMapping("/adults")
+    @CrossOrigin
     public ResponseEntity<List<Employee>> getAdultEmployee() {
         return new ResponseEntity<>(employeeService.findAdultEmployee(), HttpStatus.OK);
     }
